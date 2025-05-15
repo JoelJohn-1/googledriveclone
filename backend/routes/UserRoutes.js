@@ -1,12 +1,12 @@
-import { Router } from 'express';  
-const router = Router();  
-import { singup, login } from '../controllers/UserController';
+const Express = require('express');
+const { login, signup } = require('../controllers/UserController');
+const router = Express.Router();  
 
 // Define a route  
-router.get('/signup', singup);  
+router.post('/signup', signup);  
   
 // Define a route  
-router.get('/login', login);  
+router.post('/login', login);  
 
 // export the router module so that server.js file can use it  
-export default router;
+module.exports = router;
