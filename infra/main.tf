@@ -6,6 +6,45 @@ provider "aws" {
   region = var.aws_region
 }
 
+resource "aws_s3_bucket" "documents" {
+  bucket = "jj-google-drive-document-bucket"
+}
+# resource "aws_s3_bucket_cors_configuration" "allow_s3_from_your_ip" {
+#   bucket = aws_s3_bucket.documents.id
+
+#   cors_rule {
+#     allowed_headers = ["*"]
+#     allowed_methods = ["GET", "PUT", "POST", "DELETE"]
+#     allowed_origins = ["${chomp(data.http.my_ip.response_body)}/32"]
+#     max_age_seconds = 3000
+#   }
+# }
+resource "aws_s3_bucket_policy" "allow_s3_from_your_ip" {
+  bucket = aws_s3_bucket.documents.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "AllowAccessFromMyIP"
+        Effect    = "Allow"
+        Principal = "*"
+        Action    = "s3:*"
+        Resource = [
+          "${aws_s3_bucket.documents.arn}",
+          "${aws_s3_bucket.documents.arn}/*"
+        ]
+        Condition = {
+          IpAddress = {
+            "aws:SourceIp" = "${chomp(data.http.my_ip.response_body)}/32"
+          }
+        }
+      }
+    ]
+  })
+}
+
+
 resource "aws_db_instance" "users" {
   allocated_storage           = 10
   db_name                     = "users"
