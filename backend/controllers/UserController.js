@@ -1,4 +1,10 @@
 const { User } = require('../models')
+const config = require('../config/config.json');
+const jwt = require('jsonwebtoken');
+
+// JWT Config
+const jwtSecret = config.jwt;
+const expiry = '1h';
 
 // Signup: [/users/signup]: requires email/password in body
 async function signup(req, res) {
@@ -39,7 +45,11 @@ async function login(req, res) {
         } else if (!user.validPassword(password)) {
             return res.status(401).json({ message: "Invalid password" });
         }
-        return res.status(200).json({ message: "Successful Login" })
+        const token = jwt.sign({}, jwtSecret, {
+            expiresIn: expiry
+        });
+        
+        return res.status(200).json({ message: "Successful Login", token: token })
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: "Internal server error" });

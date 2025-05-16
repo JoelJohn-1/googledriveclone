@@ -7,6 +7,7 @@ locals {
   user_db_address = aws_db_instance.users.address
   user_db_name    = aws_db_instance.users.db_name
   mongo_db_ip     = aws_instance.mongo_instance.public_ip
+  jwt_secret_value = random_password.jwt_secret.result
   formatted_output = jsonencode({
     development = {
       username = local.secret_data["username"]
@@ -16,6 +17,7 @@ locals {
       dialect  = "mysql"
     },
     mongo_db_ip = local.mongo_db_ip
+    jwt = local.jwt_secret_value
   })
 }
 

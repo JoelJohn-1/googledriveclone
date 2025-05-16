@@ -112,3 +112,17 @@ resource "aws_instance" "mongo_instance" {
     Name = "MongoDB-Instance"
   }
 }
+
+# For user authentication
+resource "random_password" "jwt_secret" {
+  length  = 64
+  special = true
+}
+resource "aws_secretsmanager_secret" "jwt_secret" {
+  name        = "jwt-secret"
+  description = "Secret used to sign JWT tokens"
+}
+resource "aws_secretsmanager_secret_version" "jwt_secret_value" {
+  secret_id     = aws_secretsmanager_secret.jwt_secret.id
+  secret_string = random_password.jwt_secret.result
+}

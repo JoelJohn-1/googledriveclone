@@ -3,7 +3,7 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable('UserDocuments', {
-      user_id: {
+      userId: {
         primaryKey: true,
         type: Sequelize.INTEGER,
         references: {
@@ -14,21 +14,21 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
-      document_id: {
+      documentId: {
         primaryKey: true,
         type: Sequelize.STRING,
         allowNull: false
       },
-      permission_level: {
+      permissionLevel: {
         type: Sequelize.ENUM('read', 'write', 'owner'),
         allowNull: false,
         defaultValue: 'read'
       },
-      created_at: {
+      createdAt: {
         type: Sequelize.DATE,
         allowNull: false
       },
-      updated_at: {
+      updatedAt: {
         type: Sequelize.DATE,
         allowNull: false
       }

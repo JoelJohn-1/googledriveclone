@@ -1,9 +1,9 @@
 const Express = require('express');
-const { createDocument } = require('../controllers/DocumentController');
+const { createDocument } = require('../controllers/DocumentsController');
+const authenticateUser = require('../middleware/auth');
 const router = Express.Router();  
 
-// Define a route  
+router.use(authenticateUser);
 router.post('/create', createDocument);  
   
-// export the router module so that server.js file can use it  
 module.exports = router;

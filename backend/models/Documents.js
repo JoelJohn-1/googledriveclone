@@ -8,23 +8,16 @@ const DocumentSchema = new mongoose.Schema({
     s3_file_link: {
       type: String,
       default: '',
+      required: true,
+      unique: true
     },
-    // Maps to a users unique id
     owner_id: {
       type: Number,
       required: true,
-    },
-    created_at: {
-      type: Date,
-      default: () => new Date(),
-    },
-    updated_at: {
-      type: Date,
-      default: () => new Date(),
-    },
+    }
   }, {
     collection: 'documents',
-    timestamps: true // Automatically manages `createdAt` and `updatedAt`
+    timestamps: true
   });
   
   module.exports = mongoose.model('Document', DocumentSchema);
