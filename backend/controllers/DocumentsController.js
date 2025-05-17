@@ -6,11 +6,9 @@ async function createDocument(req, res) {
         return res.status(400).json({ message: 'Missing parameters' });
     }
 
+    return res.status(200).json({ message: 'Ok' });
 
 }
-
-
-
 
 module.exports = {
     createDocument

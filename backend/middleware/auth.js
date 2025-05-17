@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken'); 
 const config = require('../config/config.json');
 
-module.exports = function authenticateUser(req, res, next) {
+async function authenticateUser(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -18,3 +18,7 @@ module.exports = function authenticateUser(req, res, next) {
         res.status(401).json({ error: 'Invalid token' });
   }
 };
+
+module.exports = {
+    authenticateUser
+}
