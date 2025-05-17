@@ -5,13 +5,13 @@ const DocumentSchema = new mongoose.Schema({
       type: String,
       required: true,
     },
-    s3_file_link: {
+    s3FileLink: {
       type: String,
       default: '',
       required: true,
       unique: true
     },
-    owner_id: {
+    ownerId: {
       type: Number,
       required: true,
     }

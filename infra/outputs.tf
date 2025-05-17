@@ -10,6 +10,7 @@ locals {
   jwt_secret_value = random_password.jwt_secret.result
   backend_s3_access_name = aws_secretsmanager_secret.backend_s3_access_secret.name
   region = var.aws_region
+  s3_bucket_name = aws_s3_bucket.documents.id
   formatted_output = jsonencode({
     development = {
       username = local.secret_data["username"]
@@ -25,6 +26,7 @@ locals {
     aws = {
       aws_region = local.region
       backend_secret_identifer = local.backend_s3_access_name
+      bucket_name = local.s3_bucket_name
     }
   })
 }

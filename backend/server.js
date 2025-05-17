@@ -14,7 +14,7 @@ app.use('/documents', documentRoutes);
 async function retreiveS3Credentials() {
     const secret_name = config.aws.backend_secret_identifer;
     const client = new SecretsManagerClient({
-    region: config.aws.aws_region,
+        region: config.aws.aws_region,
     });
     let response;
     try {
@@ -29,7 +29,7 @@ async function retreiveS3Credentials() {
     const secret = JSON.parse(response.SecretString);
     config.aws.accesKeyId = secret.access_key_id;
     config.aws.secretAccessKey = secret.secret_access_key;
-    console.log(config.aws);
+    console.log("Successfully retreived IAM identity for s3 access.")
 }
 // Connect to Mongo
 async function initializeMongoServer() {
