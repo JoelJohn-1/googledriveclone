@@ -9,16 +9,6 @@ provider "aws" {
 resource "aws_s3_bucket" "documents" {
   bucket = "jj-google-drive-document-bucket"
 }
-# resource "aws_s3_bucket_cors_configuration" "allow_s3_from_your_ip" {
-#   bucket = aws_s3_bucket.documents.id
-
-#   cors_rule {
-#     allowed_headers = ["*"]
-#     allowed_methods = ["GET", "PUT", "POST", "DELETE"]
-#     allowed_origins = ["${chomp(data.http.my_ip.response_body)}/32"]
-#     max_age_seconds = 3000
-#   }
-# }
 resource "aws_s3_bucket_policy" "allow_s3_from_your_ip" {
   bucket = aws_s3_bucket.documents.id
 
@@ -43,7 +33,6 @@ resource "aws_s3_bucket_policy" "allow_s3_from_your_ip" {
     ]
   })
 }
-
 
 resource "aws_db_instance" "users" {
   allocated_storage           = 10
@@ -126,3 +115,46 @@ resource "aws_secretsmanager_secret_version" "jwt_secret_value" {
   secret_id     = aws_secretsmanager_secret.jwt_secret.id
   secret_string = random_password.jwt_secret.result
 }
+
+# IAM User for backend to acces s3
+resource "aws_iam_user" "backend_s3_access" {
+  name = "backend_s3_access"
+}
+data "aws_iam_policy_document" "allow_s3_from_backend" {
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "s3:PutObject",
+      "s3:GetObject",
+      "s3:DeleteObject",
+      "s3:ListBucket"
+    ]
+
+    resources = [
+      "arn:aws:s3:::your-bucket-name",
+      "arn:aws:s3:::your-bucket-name/*"
+    ]
+  }
+}
+
+resource "aws_iam_user_policy" "s3_policy" {
+  name   = "backend_s3_policy"
+  user   = aws_iam_user.backend_s3_access.name
+  policy = data.aws_iam_policy_document.allow_s3_from_backend.json
+}
+resource "aws_iam_access_key" "backend_s3_access_key" {
+  user = aws_iam_user.backend_s3_access.name
+}
+resource "aws_secretsmanager_secret" "backend_s3_access_secret" {
+  name        = "backend-s3-access-credentials"
+  description = "Access key and secret key for the backend IAM user"
+}
+resource "aws_secretsmanager_secret_version" "backend_s3_access_secret_secret_version" {
+  secret_id     = aws_secretsmanager_secret.backend_s3_access_secret.id
+  secret_string = jsonencode({
+    access_key_id     = aws_iam_access_key.backend_s3_access_key.id
+    secret_access_key = aws_iam_access_key.backend_s3_access_key.secret
+  })
+}
+

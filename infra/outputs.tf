@@ -8,6 +8,8 @@ locals {
   user_db_name    = aws_db_instance.users.db_name
   mongo_db_ip     = aws_instance.mongo_instance.public_ip
   jwt_secret_value = random_password.jwt_secret.result
+  backend_s3_access_name = aws_secretsmanager_secret.backend_s3_access_secret.name
+  region = var.aws_region
   formatted_output = jsonencode({
     development = {
       username = local.secret_data["username"]
@@ -16,8 +18,14 @@ locals {
       host     = local.user_db_address
       dialect  = "mysql"
     },
-    mongo_db_ip = local.mongo_db_ip
-    jwt = local.jwt_secret_value
+    mongo = {
+        mongo_db_ip = local.mongo_db_ip
+    },
+    jwt = local.jwt_secret_value,
+    aws = {
+      aws_region = local.region
+      backend_secret_identifer = local.backend_s3_access_name
+    }
   })
 }
 
