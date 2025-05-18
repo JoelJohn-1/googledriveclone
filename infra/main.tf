@@ -110,6 +110,7 @@ resource "random_password" "jwt_secret" {
 resource "aws_secretsmanager_secret" "jwt_secret" {
   name        = "jwt-secret"
   description = "Secret used to sign JWT tokens"
+  recovery_window_in_days = 0
 }
 resource "aws_secretsmanager_secret_version" "jwt_secret_value" {
   secret_id     = aws_secretsmanager_secret.jwt_secret.id
@@ -149,6 +150,7 @@ resource "aws_iam_access_key" "backend_s3_access_key" {
 resource "aws_secretsmanager_secret" "backend_s3_access_secret" {
   name        = "backend-s3-access-credentials"
   description = "Access key and secret key for the backend IAM user"
+  recovery_window_in_days = 0
 }
 resource "aws_secretsmanager_secret_version" "backend_s3_access_secret_secret_version" {
   secret_id     = aws_secretsmanager_secret.backend_s3_access_secret.id

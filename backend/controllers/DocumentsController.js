@@ -56,7 +56,7 @@ async function createDocument(req, res) {
         const documentId = mongoResponse._id.toString();
 
         // Creates UserDocuments mapping to mongo document
-        await UserDocuments.create({ userId, documentId });
+        await UserDocuments.create({ userId, documentId, permissionLevel: 'owner' });
         return res.status(200).json({ message: "Document created" });
     } catch (error) {
         console.error(error);
