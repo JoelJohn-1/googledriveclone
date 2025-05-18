@@ -6,7 +6,11 @@ const jwt = require('jsonwebtoken');
 const jwtSecret = config.jwt;
 const expiry = '1h';
 
-// Signup: [/users/signup]: requires email/password in body
+/*
+    singup: [/users/signup]: creates user
+    Required Args: Req Body must contain email and password
+    Connections: SQL
+*/ 
 async function signup(req, res) {
     // Validate user/password data exists
     const { email, password } = req.body;
@@ -28,7 +32,11 @@ async function signup(req, res) {
     }
 }
 
-// Signup: [/users/login]: requires email/password in body
+/*
+    login: [/users/login]: validates user, returns jwt token
+    Required Args: Req Body must contain email and password
+    Connections: SQL
+*/ 
 async function login(req, res) {
     // Validate user/password data exists
     const { email, password } = req.body;

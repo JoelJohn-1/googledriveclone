@@ -33,7 +33,6 @@ module.exports = {
         allowNull: false
       }
     });
-
   },
   async down(queryInterface, Sequelize) {
     await queryInterface.dropTable('UserDocuments');

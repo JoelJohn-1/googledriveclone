@@ -5,8 +5,12 @@ const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/cl
 const client = new S3Client({ region: config.aws.aws_region });
 
 const { v4 } = require('uuid');
-const { mongo } = require('mongoose');
 
+/*
+    description: deletes s3 object
+    Required Args: key for object
+    Connections: AWS
+*/ 
 async function deleteS3Object(key) {
     const deleteCommand = new DeleteObjectCommand({
         Bucket: config.aws.bucket_name,
@@ -15,6 +19,11 @@ async function deleteS3Object(key) {
     await client.send(deleteCommand);
 }
 
+/*
+    createDocument: [/documents/create]: creates empty document connected to user
+    Required Args: Req Body must contain email and title
+    Connections: AWS, Mongo, SQL
+*/ 
 async function createDocument(req, res) {
     const { email, title } = req.body;
     if (!email || !title) {
@@ -26,8 +35,8 @@ async function createDocument(req, res) {
 
     let s3Response;
     let mongoResponse;
-    // Create new document in s3
     try {
+        // Create empty document in s3
         const putObjectParams = {
             Bucket: config.aws.bucket_name,
             Key: key,
@@ -37,18 +46,21 @@ async function createDocument(req, res) {
         const createNewDocCommand = new PutObjectCommand(putObjectParams);
         s3Response = await client.send(createNewDocCommand);
 
+        // Creates mongo mapping to s3 document
         const newDoc = new Document({
             title: title,
             s3FileLink: key,
             ownerId: userId
         });
         mongoResponse = await newDoc.save();
-
         const documentId = mongoResponse._id.toString();
+
+        // Creates UserDocuments mapping to mongo document
         await UserDocuments.create({ userId, documentId });
         return res.status(200).json({ message: "Document created" });
     } catch (error) {
         console.error(error);
+        // Roll back s3 creation
         if (s3Response) {
             try {
                 await deleteS3Object(key);
@@ -56,6 +68,8 @@ async function createDocument(req, res) {
                 console.error(error);
             }
         }
+
+        // Roll back mongo creation
         if (mongoResponse) {
             try {
                 await Document.deleteOne({ _id: mongoResponse._id })
