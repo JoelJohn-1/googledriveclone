@@ -1,19 +1,31 @@
 const Document = require('../models/Documents');
+const { UserDocuments } = require('../models');
 const config = require('../config/config.json');
 const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
-const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const client = new S3Client({ region: config.aws.aws_region });
 
-const { v4 } = require('uuid')
+const { v4 } = require('uuid');
+const { mongo } = require('mongoose');
+
+async function deleteS3Object(key) {
+    const deleteCommand = new DeleteObjectCommand({
+        Bucket: config.aws.bucket_name,
+        Key: key
+    });
+    await client.send(deleteCommand);
+}
 
 async function createDocument(req, res) {
     const { email, title } = req.body;
     if (!email || !title) {
         return res.status(400).json({ message: 'Missing parameters' });
     }
+    const userId = req.user.id;
     const fileId = v4();
-    const key = `${req.user.id}/${fileId}_${title}`;
+    const key = `${userId}/${fileId}_${title}`;
 
+    let s3Response;
+    let mongoResponse;
     // Create new document in s3
     try {
         const putObjectParams = {
@@ -23,34 +35,33 @@ async function createDocument(req, res) {
             ContentType: 'text/plain'
         };
         const createNewDocCommand = new PutObjectCommand(putObjectParams);
-        await client.send(createNewDocCommand);
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: "Internal server error" });
-    }
+        s3Response = await client.send(createNewDocCommand);
 
-    // Save reference to document in mongo
-    try {
         const newDoc = new Document({
             title: title,
             s3FileLink: key,
-            ownerId: req.user.id
+            ownerId: userId
         });
-        await newDoc.save();
-        return res.status(200).json({ message: 'Ok' });
+        mongoResponse = await newDoc.save();
+
+        const documentId = mongoResponse._id.toString();
+        await UserDocuments.create({ userId, documentId });
+        return res.status(200).json({ message: "Document created" });
     } catch (error) {
         console.error(error);
-
-        //In case of error, roll back s3 upload
-        try {
-            const deleteCommand = new DeleteObjectCommand({
-                Bucket: config.aws.bucket_name,
-                Key: key
-            });
-            await client.send(deleteCommand);
-        } catch (error) {
-            console.error(error);
-            return res.status(500).json({ message: "Internal server error, potential sync error with document in s3 but not mongo" });
+        if (s3Response) {
+            try {
+                await deleteS3Object(key);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+        if (mongoResponse) {
+            try {
+                await Document.deleteOne({ _id: mongoResponse._id })
+            } catch (error) {
+                console.error(error);
+            }
         }
 
         return res.status(500).json({ message: "Internal server error" });

@@ -14,12 +14,32 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
   UserDocuments.init({
-    user_id: DataTypes.INTEGER,
-    document_id: DataTypes.STRING,
-    permission_level: DataTypes.INTEGER
+    userId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      primaryKey: true,
+      references: {
+        model: 'Users',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'CASCADE'
+    },
+    documentId: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      primaryKey: true
+    },
+    permissionLevel: {
+      type: DataTypes.ENUM('read', 'write', 'owner'),
+      allowNull: false,
+      defaultValue: 'read'
+    }
   }, {
     sequelize,
     modelName: 'UserDocuments',
+    timestamps: true,
+    underscored: false
   });
   return UserDocuments;
 };
