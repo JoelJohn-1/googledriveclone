@@ -1,4 +1,5 @@
 const Express = require('express');
+const cors = require('cors'); 
 const mongoose = require('mongoose');
 const config = require('./config/config.json');
 const userRoutes = require('./routes/UserRoutes');
@@ -6,6 +7,10 @@ const documentRoutes = require('./routes/DocumentRoutes')
 const { SecretsManagerClient, GetSecretValueCommand } = require('@aws-sdk/client-secrets-manager')
 // App config
 const app = Express();
+app.use(cors({
+    origin: 'http://localhost:3000',
+    credentials: true
+}));
 app.use(Express.json());
 app.use('/users', userRoutes);
 app.use('/documents', documentRoutes);

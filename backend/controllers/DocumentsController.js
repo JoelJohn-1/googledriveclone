@@ -3,7 +3,6 @@ const { UserDocuments } = require('../models');
 const config = require('../config/config.json');
 const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const client = new S3Client({ region: config.aws.aws_region });
-
 const { v4 } = require('uuid');
 
 /*
