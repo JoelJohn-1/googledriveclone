@@ -87,8 +87,12 @@ async function createDocument(req, res) {
     Connections: AWS, Mongo, SQL
 */
 async function deleteDocument(req, res) {
-    const { email, documentId } = req.body;
-    if (!email || !documentId) {
+    const { email } = req.body;
+    if (!email) {
+        return res.status(400).json({ message: 'Missing parameters' });
+    }
+    const documentId = req.params.documentid;
+    if (!documentId) {
         return res.status(400).json({ message: 'Missing parameters' });
     }
     const userId = req.user.id;
@@ -116,7 +120,21 @@ async function deleteDocument(req, res) {
     }
 }
 
+/*
+    getDocument: [/documents/retrieve]: gets a document
+    Required Args: Req Body must contain user and title
+    Connections: AWS, Mongo, SQL
+*/
+async function getDocument(req, res) {
+    const { email, title } = req.body;
+    if (!email || !documentId) {
+        return res.status(400).json({ message: 'Missing parameters' });
+    }
+    const userId = req.user.id;
+
+}
 module.exports = {
     createDocument,
-    deleteDocument
+    deleteDocument,
+    getDocument
 }
