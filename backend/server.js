@@ -12,7 +12,7 @@ app.use(cors({
     credentials: true
 }));
 app.use(Express.json());
-app.use('/users', userRoutes);
+app.use('/auth', userRoutes);
 app.use('/documents', documentRoutes);
 
 // Retreive the IAM credentials to access the s3 bucket policy for API requests

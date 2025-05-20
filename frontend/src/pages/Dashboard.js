@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import Editor from "@monaco-editor/react";
+
 // import { getDashboardData } from '../api/auth';
 
 function Dashboard() {
-  const [message, setMessage] = useState('');
-
   useEffect(() => {
     // const fetchData = async () => {
     //   try {
@@ -21,7 +21,12 @@ function Dashboard() {
   return (
     <div>
       <h2>Dashboard</h2>
-      <p>{message}</p>
+      <Editor
+        height="500px"
+        defaultLanguage="plaintext"
+        value={fileContent}
+      />
+
     </div>
   );
 }

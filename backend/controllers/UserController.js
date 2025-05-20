@@ -10,7 +10,7 @@ const expiry = '1h';
     singup: [/users/signup]: creates user
     Required Args: Req Body must contain email and password
     Connections: SQL
-*/ 
+*/
 async function signup(req, res) {
     // Validate user/password data exists
     const { email, password } = req.body;
@@ -36,14 +36,14 @@ async function signup(req, res) {
     login: [/users/login]: validates user, returns jwt token
     Required Args: Req Body must contain email and password
     Connections: SQL
-*/ 
+*/
 async function login(req, res) {
     // Validate user/password data exists
     const { email, password } = req.body;
     if (!email || !password) {
         return res.status(400).json({ message: 'Missing parameters' });
     }
-    
+
     // Check if credentials are valid
     try {
         const user = await User.findOne({ where: { email } });
@@ -52,10 +52,10 @@ async function login(req, res) {
         } else if (!user.validPassword(password)) {
             return res.status(401).json({ message: "Invalid password" });
         }
-        const token = jwt.sign({id: user.id, email: user.email}, jwtSecret, {
+        const token = jwt.sign({ id: user.id }, jwtSecret, {
             expiresIn: expiry
         });
-        
+
         return res.status(200).json({ message: "Successful Login", token: token })
     } catch (error) {
         console.error(error);

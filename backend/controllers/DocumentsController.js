@@ -1,10 +1,10 @@
+const { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
+const sequelize = require('sequelize');
 const Document = require('../models/Documents');
 const { UserDocuments } = require('../models');
 const config = require('../config/config.json');
-const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const client = new S3Client({ region: config.aws.aws_region });
 const { v4 } = require('uuid');
-
 /*
     description: deletes s3 object
     Required Args: key for object
@@ -17,15 +17,33 @@ async function deleteS3Object(key) {
     });
     await client.send(deleteCommand);
 }
+async function streamToString(stream) {
+    let data = '';
+    for await (const chunk of stream) {
+        data += chunk.toString('utf-8');
+    }
+    return data;
+}
+
+
+
+async function getS3Object(key) {
+    const getCommand = new GetObjectCommand({
+        Bucket: config.aws.bucket_name,
+        Key: key
+    })
+    const s3Object = await client.send(getCommand);
+    return s3Object;
+}
 
 /*
-    createDocument: [/documents/create]: creates empty document connected to user
-    Required Args: Req Body must contain email and title
+    createDocument: [/documents]: creates empty document connected to user
+    Required Args: Req Body must contain title
     Connections: AWS, Mongo, SQL
 */
 async function createDocument(req, res) {
-    const { email, title } = req.body;
-    if (!email || !title) {
+    const { title } = req.body;
+    if (!title) {
         return res.status(400).json({ message: 'Missing parameters' });
     }
     const userId = req.user.id;
@@ -82,15 +100,10 @@ async function createDocument(req, res) {
 }
 
 /*
-    deleteDocument: [/documents/delete]: deletes a document connected to user
-    Required Args: Req Body must contain user and documentid
+    deleteDocument: [/documents/:documentid]: deletes a document connected to user
     Connections: AWS, Mongo, SQL
 */
 async function deleteDocument(req, res) {
-    const { email } = req.body;
-    if (!email) {
-        return res.status(400).json({ message: 'Missing parameters' });
-    }
     const documentId = req.params.documentid;
     if (!documentId) {
         return res.status(400).json({ message: 'Missing parameters' });
@@ -113,7 +126,6 @@ async function deleteDocument(req, res) {
         });
 
         return res.status(200).json({ message: "Ok" });
-
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: "Internal server error" });
@@ -121,20 +133,88 @@ async function deleteDocument(req, res) {
 }
 
 /*
-    getDocument: [/documents/retrieve]: gets a document
-    Required Args: Req Body must contain user and title
+    getDocument: [/documents/:documentid]: returns text for a specific document
     Connections: AWS, Mongo, SQL
 */
 async function getDocument(req, res) {
-    const { email, title } = req.body;
-    if (!email || !documentId) {
+    const documentId = req.params.documentid;
+    if (!documentId) {
         return res.status(400).json({ message: 'Missing parameters' });
     }
     const userId = req.user.id;
+
+    try {
+        const documentAccess = await UserDocuments.findOne({
+            where: {
+                userId: userId,
+                documentId: documentId
+            },
+            attributes: ['permissionLevel']
+        })
+        if (!documentAccess) {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+
+        const permissionLevel = documentAccess.dataValues.permissionLevel;
+        const metaData = await Document.findById(documentId);
+        const key = metaData.s3FileLink;
+        const document = await getS3Object(key);
+        const content = await streamToString(document.Body);
+
+        const payload = {
+            "Permissions": permissionLevel,
+            "Content": content
+        }
+        return res.status(200).json(payload);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+
+}
+
+/*
+    getDocument: [/documents/]: returns meta data for paginated documents connected to a user
+    Required Args: Req Body must contain user and title
+    Connections: Mongo, SQL
+*/
+async function getDocuments(req, res) {
+    const { page = 0, limit = 5 } = req.query;
+    const userId = req.user.id;
+
+    if (limit > 10) {
+        return res.status(403).json({ message: "Requested too many pages, please decrease limit" });
+
+    }
+    try {
+        const { count, rows } = await UserDocuments.findAndCountAll({
+            where: {
+                userId: userId
+            },
+            order: sequelize.col('updatedAt'),
+            offset: page * limit,
+            limit: limit,
+            attributes: ['documentId']
+        });
+        const documentIds = rows.map(row => row.documentId);
+        const documents = await Document.find({
+            _id: { $in: documentIds }
+        }).select('title ownerId updatedAt');
+        const payload = {
+            "Total": count,
+            "Documents": documents
+        }
+        return res.status(200).json(payload);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+
 
 }
 module.exports = {
     createDocument,
     deleteDocument,
-    getDocument
+    getDocument,
+    getDocuments
 }
