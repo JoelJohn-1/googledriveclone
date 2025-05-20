@@ -5,11 +5,7 @@ const { UserDocuments } = require('../models');
 const config = require('../config/config.json');
 const client = new S3Client({ region: config.aws.aws_region });
 const { v4 } = require('uuid');
-/*
-    description: deletes s3 object
-    Required Args: key for object
-    Connections: AWS
-*/
+
 async function deleteS3Object(key) {
     const deleteCommand = new DeleteObjectCommand({
         Bucket: config.aws.bucket_name,
@@ -24,8 +20,6 @@ async function streamToString(stream) {
     }
     return data;
 }
-
-
 
 async function getS3Object(key) {
     const getCommand = new GetObjectCommand({
@@ -179,14 +173,15 @@ async function getDocument(req, res) {
     Connections: Mongo, SQL
 */
 async function getDocuments(req, res) {
-    const { page = 0, limit = 5 } = req.query;
-    const userId = req.user.id;
-
-    if (limit > 10) {
-        return res.status(403).json({ message: "Requested too many pages, please decrease limit" });
-
-    }
     try {
+        const page = parseInt(req.query.page || "0", 10);
+        const limit = parseInt(req.query.limit || "5", 10);
+        if (limit > 10) {
+            return res.status(403).json({ message: "Requested too many pages, please decrease limit" });
+
+        }
+        const userId = req.user.id;
+
         const { count, rows } = await UserDocuments.findAndCountAll({
             where: {
                 userId: userId
@@ -212,6 +207,7 @@ async function getDocuments(req, res) {
 
 
 }
+
 module.exports = {
     createDocument,
     deleteDocument,

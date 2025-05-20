@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:3001/users';
+const API_BASE = 'http://localhost:3001/auth';
 
 export async function signup(email, password) {
   const res = await fetch(`${API_BASE}/signup`, {
