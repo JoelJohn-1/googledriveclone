@@ -36,17 +36,15 @@ async function getS3Object(key) {
     Connections: AWS, Mongo, SQL
 */
 async function createDocument(req, res) {
-    const { title } = req.body;
-    if (!title) {
-        return res.status(400).json({ message: 'Missing parameters' });
-    }
-    const userId = req.user.id;
-    const fileId = v4();
-    const key = `${userId}/${fileId}_${title}`;
-
     let s3Response;
     let mongoResponse;
     try {
+        console.log(req)
+        let { title } = req.body;
+        const userId = req.user.id;
+        const fileId = v4();
+        const key = `${userId}/${fileId}_${title}`;
+
         // Create empty document in s3
         const putObjectParams = {
             Bucket: config.aws.bucket_name,
@@ -98,14 +96,14 @@ async function createDocument(req, res) {
     Connections: AWS, Mongo, SQL
 */
 async function deleteDocument(req, res) {
-    const documentId = req.params.documentid;
-    if (!documentId) {
-        return res.status(400).json({ message: 'Missing parameters' });
-    }
-    const userId = req.user.id;
-
-    let mongoResponse;
     try {
+        const documentId = req.params.documentid;
+        if (!documentId) {
+            return res.status(400).json({ message: 'Missing parameters' });
+        }
+        const userId = req.user.id;
+
+        let mongoResponse;
         // Find mongo document tied to documentid
         mongoResponse = await Document.findOne({ _id: documentId });
 
@@ -131,13 +129,13 @@ async function deleteDocument(req, res) {
     Connections: AWS, Mongo, SQL
 */
 async function getDocument(req, res) {
-    const documentId = req.params.documentid;
-    if (!documentId) {
-        return res.status(400).json({ message: 'Missing parameters' });
-    }
-    const userId = req.user.id;
-
     try {
+        const documentId = req.params.documentid;
+        if (!documentId) {
+            return res.status(400).json({ message: 'Missing parameters' });
+        }
+        const userId = req.user.id;
+
         const documentAccess = await UserDocuments.findOne({
             where: {
                 userId: userId,
@@ -208,9 +206,29 @@ async function getDocuments(req, res) {
 
 }
 
+/*
+    getDocument: [/documents/]: returns meta data for paginated documents connected to a user
+    Required Args: Req Body must contain user and title
+    Connections: AWS, Mongo, SQL
+*/
+async function handleDocumentSync(ws, req) {
+    ws.on('message', (msg) => {
+        console.log('Message received:', msg);
+        ws.send(`Echo: ${msg}`);
+    });
+
+    ws.on('close', (code, reason) => {
+        console.log(`WebSocket closed. Code: ${code}, Reason: ${reason}`);
+    });
+
+    ws.on('error', (err) => {
+        console.error('WebSocket error:', err);
+    });
+}
 module.exports = {
     createDocument,
     deleteDocument,
     getDocument,
-    getDocuments
+    getDocuments,
+    handleDocumentSync
 }

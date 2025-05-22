@@ -18,9 +18,11 @@
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "express": "^5.1.0",
+    "express-ws": "^5.0.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.15.0",
     "mysql2": "^3.14.1",
+    "quill-delta": "^5.1.0",
     "sequelize": "^6.37.7",
     "uuid": "^11.1.0"
   },

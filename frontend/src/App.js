@@ -4,8 +4,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Navbar from './components/Navbar';
 import Signup from './pages/Signup';
 import Login from './pages/Login';
-import Dashboard from './pages/HomePage';
-
+import HomePage from './pages/HomePage';
+import Document from './pages/Document';
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
 
@@ -17,17 +17,25 @@ function App() {
     <Router>
       <Navbar isAuthenticated={isAuthenticated} handleIsAuthenticated={handleIsAuthenticated} />
       <Routes>
-        <Route
+      <Route
           path="/"
-          element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />}
+          element={<Navigate to="/home"/>}
+        />
+        <Route
+          path="/home"
+          element={isAuthenticated ? <HomePage /> : <Navigate to="/login" />}
+        />
+         <Route
+          path="/documents/:documentId"
+          element={isAuthenticated ? <Document /> : <Navigate to="/login" />}
         />
         <Route
           path="/signup"
-          element={isAuthenticated ? <Navigate to="/" /> : <Signup handleIsAuthenticated={handleIsAuthenticated} />}
+          element={isAuthenticated ? <Navigate to="/home" /> : <Signup/>}
         />
         <Route
           path="/login"
-          element={isAuthenticated ? <Navigate to="/" /> : <Login handleIsAuthenticated={handleIsAuthenticated} />}
+          element={isAuthenticated ? <Navigate to="/home" /> : <Login handleIsAuthenticated={handleIsAuthenticated} />}
         />
         <Route
           path="*"

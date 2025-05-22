@@ -3,14 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { signup } from '../api/auth';
 import PropTypes from 'prop-types';
 
-function Signup({ isAuthenticated, handleIsAuthenticated }) {
+function Signup() {
   const [form, setForm] = useState({ username: '', password: '' });
   const navigate = useNavigate();
-
-  Signup.propTypes = {
-    isAuthenticated: PropTypes.bool.isRequired,
-    handleIsAuthenticated: PropTypes.string.isRequired
-  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();

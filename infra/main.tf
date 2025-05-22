@@ -8,6 +8,7 @@ provider "aws" {
 
 resource "aws_s3_bucket" "documents" {
   bucket = "jj-google-drive-document-bucket"
+  force_destroy = true
 }
 resource "aws_s3_bucket_policy" "allow_s3_from_your_ip" {
   bucket = aws_s3_bucket.documents.id

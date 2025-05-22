@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
-// import Editor from "@monaco-editor/react";
-import { getDocuments } from '../api/documents';
+import { getDocuments, createDocument } from '../api/documents';
 import {
   List,
   Pagination,
-  Typography,
   Divider,
   Paper,
-  Box
+  Typography,
+  Box,
+  Button
 } from '@mui/material';
 import DocumentListItem from '../components/DocumentListItem'; // new component
 
@@ -15,11 +15,19 @@ function Dashboard() {
   const pageLimit = 7;
   const [documents, setDocuments] = useState([]); // store list of strings
   const [pageNum, setPageNum] = useState(0);
+
+  const createUserDocument = async() => {
+    try {
+      const data = await createDocument("Untitled Document");
+      getUserDocuments();
+    } catch (error) {
+      console.error(error);
+    }
+  }
   const getUserDocuments = async (page = 0) => {
     try {
-      const token = localStorage.getItem('token');
       const data = await getDocuments(page, pageLimit);
-      setPageNum(Math.ceil(data.Total/pageLimit));
+      setPageNum(Math.ceil(data.Total / pageLimit));
       setDocuments(data.Documents || []);
     } catch (error) {
       console.error(error);
@@ -30,11 +38,13 @@ function Dashboard() {
   }, []);
 
   return (
-    <Box p={3}>
-      <Typography variant="h4" gutterBottom>
-        Your Documents
-      </Typography>
-
+    <Box>
+      <Box width="100%" display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+        <Typography variant="h4" gutterBottom>
+          Your Documents
+        </Typography>
+        <Button onClick={createUserDocument} variant="contained">+</Button>
+      </Box>
       <Paper elevation={2}>
         <List>
           {documents.map((doc, idx) => (
@@ -59,6 +69,7 @@ function Dashboard() {
         />
       </Box>
     </Box>
+
   );
 }
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ListItem, ListItemText, Typography } from '@mui/material';
+import { ListItem, ListItemText, Typography, Link } from '@mui/material';
 import PropTypes from 'prop-types';
 
 function DocumentListItem({ doc }) {
@@ -15,7 +15,11 @@ function DocumentListItem({ doc }) {
     return (
         <ListItem>
             <ListItemText
-                primary={doc.title}
+                primary={
+                    <Link href={`/documents/${doc._id}`}>
+                        {doc.title}
+                    </Link>
+                }
                 secondary={
                     <>
                         <Typography component="span" variant="body2" color="text.primary">

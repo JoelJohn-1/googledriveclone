@@ -3,12 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { login } from '../api/auth';
 import PropTypes from 'prop-types';
 
-function Login({ isAuthenticated, handleIsAuthenticated }) {
+function Login({ handleIsAuthenticated }) {
   const [form, setForm] = useState({ username: '', password: '' });
   const navigate = useNavigate();
 
   Login.propTypes = {
-    isAuthenticated: PropTypes.bool.isRequired,
     handleIsAuthenticated: PropTypes.string.isRequired
   }
 
@@ -16,7 +15,6 @@ function Login({ isAuthenticated, handleIsAuthenticated }) {
     e.preventDefault();
     try {
       const data = await login(form.username, form.password);
-      localStorage.setItem('token', data.token);
       handleIsAuthenticated();
       navigate('/');
     } catch (error) {

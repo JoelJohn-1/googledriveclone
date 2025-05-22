@@ -20,7 +20,7 @@ function Navbar({ isAuthenticated, handleIsAuthenticated }) {
   return (
     <nav style={styles.navbar}>
       <div>
-        <Link to="/" style={styles.link}>Dashboard</Link>
+        <Link to="/home" style={styles.link}>Dashboard</Link>
         {!isAuthenticated && (
           <>
             <Link to="/signup" style={styles.link}>Signup</Link>
