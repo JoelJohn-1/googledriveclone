@@ -39,7 +39,6 @@ async function signup(req, res) {
 */
 async function login(req, res) {
     // Validate user/password data exists
-    console.log(req.body);
     const { email, password } = req.body;
     if (!email || !password) {
         return res.status(400).json({ message: 'Missing parameters' });

@@ -1,23 +1,32 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { getDocument, updateDocument } from '../api/documents';
+import { getDocument, establishConnection } from '../api/documents';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 
 function DocumentDetail() {
     const quillRef = useRef(null);
     const { documentId } = useParams();
+    // eslint-disable-next-line
     const [content, setContent] = useState();
     const [baseline, setBaseline] = useState(null);
     const [lastTime, setLastTime] = useState(Date.now())
+    const socketRef = useRef(null);
     useEffect(() => {
         loadDocument(documentId);
         const currentContents = quillRef.current.getEditor().getContents();
         setBaseline(currentContents);
+
+        //On unmount
+        return () => {
+            if (socketRef.current) socketRef.current.close();
+        };
+        
     }, []);
 
     const loadDocument = async (documentId) => {
         await getDocument(documentId);
+        socketRef.current = await establishConnection(documentId);
     }
 
     const saveDocument = async (delta) => {
@@ -29,7 +38,7 @@ function DocumentDetail() {
             setBaseline(currentContents);
 
             // Send update
-            updateDocument(documentId, delta);
+            socketRef.current.send(JSON.stringify({type: "Update", documentId: documentId, delta: delta}));
         }
     }
 

@@ -18,7 +18,7 @@ function Dashboard() {
 
   const createUserDocument = async() => {
     try {
-      const data = await createDocument("Untitled Document");
+      await createDocument("Untitled Document");
       getUserDocuments();
     } catch (error) {
       console.error(error);

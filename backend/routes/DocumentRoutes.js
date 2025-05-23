@@ -1,5 +1,5 @@
 const Express = require('express');
-const { createDocument, deleteDocument, getDocument, getDocuments, handleDocumentSync } = require('../controllers/DocumentsController');
+const { createDocument, deleteDocument, getDocument, getDocuments, handleDocumentConnection } = require('../controllers/DocumentsController');
 const { authenticateUser } = require('../middleware/auth');
 
 
@@ -12,6 +12,6 @@ module.exports = (wsInstance) => {
     router.delete('/:documentid', deleteDocument);
     router.get('/:documentid', getDocument);
     router.get('/', getDocuments);
-    router.ws('/:documentid', handleDocumentSync)
+    router.ws('/:documentid', handleDocumentConnection)
     return router;
 }

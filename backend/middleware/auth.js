@@ -2,11 +2,9 @@ const jwt = require('jsonwebtoken');
 const config = require('../config/config.json');
 
 async function authenticateUser(req, res, next) {
-  console.log(req);
   let token;
   try {
     // Check if websocket connection
-    console.log(req.query.token);
     if (req.headers.upgrade?.toLowerCase() === 'websocket') {
       token = req.query.token;
     } else { // Normal request
