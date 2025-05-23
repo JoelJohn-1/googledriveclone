@@ -34,7 +34,7 @@ async function getS3Object(key) {
     return s3Object;
 }
 
-async function putS3Object(key, content) {
+async function uploadS3Object(key, content) {
     const upload = new Upload({
         client: client,
         params: {
@@ -47,6 +47,8 @@ async function putS3Object(key, content) {
     const s3Response = await upload.done();
     return s3Response;
 }
+
+// Access UserDocuments table to get a users permissions for a document
 async function getUserPermissionsToDocument(userId, documentId) {
     const documentAccess = await UserDocuments.findOne({
         where: {
@@ -59,6 +61,7 @@ async function getUserPermissionsToDocument(userId, documentId) {
     return documentAccess.dataValues.permissionLevel;
 }
 
+// Applies the quill-delta to a string and returns updated string, will be outdated once storing deltas instead of strings
 function applyDeltaToString(base, delta) {
     const deltaOps = delta.ops;
     let result = '';
@@ -82,19 +85,21 @@ function applyDeltaToString(base, delta) {
     return result;
 }
 
+// Takes a delta and updates a s3 document and saves it
 async function applyDeltaToDocument(key, delta) {
     // need to refactor in futute to store deltas and not text in s3
     try {
         const document = await getS3Object(key);
         let content = await streamToString(document.Body);
         content = applyDeltaToString(content, new Delta(delta));
-        await putS3Object(key, content);
+        await uploadS3Object(key, content);
         return { status: 200 };
     } catch (error) {
         console.error(error);
         return { status: 500 };
     }
 }
+
 /*
     createDocument: [/documents]: creates empty document connected to user
     Required Args: Req Body must contain title
@@ -110,7 +115,7 @@ async function createDocument(req, res) {
         const key = `${userId}/${fileId}_${title}`;
 
 
-        s3Response = putS3Object(key, '');
+        s3Response = uploadS3Object(key, '');
 
         // Creates mongo mapping to s3 document
         const newDoc = new Document({
