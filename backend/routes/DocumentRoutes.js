@@ -12,6 +12,6 @@ module.exports = (wsInstance) => {
     router.delete('/:documentid', deleteDocument);
     router.get('/:documentid', getDocument);
     router.get('/', getDocuments);
-    router.ws('/:documentid', handleDocumentConnection)
+    router.ws('/ws/', handleDocumentConnection)
     return router;
 }

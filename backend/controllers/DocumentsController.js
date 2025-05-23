@@ -1,12 +1,15 @@
-const { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, DeleteObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const Delta = require('quill-delta');
 const sequelize = require('sequelize');
+const { Upload } = require('@aws-sdk/lib-storage');
 const Document = require('../models/Documents');
 const { UserDocuments } = require('../models');
 const config = require('../config/config.json');
 const client = new S3Client({ region: config.aws.aws_region });
 const { v4 } = require('uuid');
 const jwt = require('jsonwebtoken');
+
+
 async function deleteS3Object(key) {
     const deleteCommand = new DeleteObjectCommand({
         Bucket: config.aws.bucket_name,
@@ -31,6 +34,19 @@ async function getS3Object(key) {
     return s3Object;
 }
 
+async function putS3Object(key, content) {
+    const upload = new Upload({
+        client: client,
+        params: {
+            Bucket: config.aws.bucket_name,
+            Key: key,
+            Body: content,
+            ContentType: 'text/plain'
+        }
+    });
+    const s3Response = await upload.done();
+    return s3Response;
+}
 async function getUserPermissionsToDocument(userId, documentId) {
     const documentAccess = await UserDocuments.findOne({
         where: {
@@ -42,24 +58,41 @@ async function getUserPermissionsToDocument(userId, documentId) {
     if (!documentAccess) return undefined;
     return documentAccess.dataValues.permissionLevel;
 }
-async function applyDeltaToDocument(documentId, delta) {
+
+function applyDeltaToString(base, delta) {
+    const deltaOps = delta.ops;
+    let result = '';
+    let index = 0;
+
+    for (let op of deltaOps) {
+        if (op.retain !== undefined) {
+            result += base.slice(index, index + op.retain);
+            index += op.retain;
+        }
+        if (op.insert !== undefined) {
+            result += op.insert;
+        }
+        if (op.delete !== undefined) {
+            index += op.delete;
+        }
+    }
+
+    // Append any remaining text from the base
+    result += base.slice(index);
+    return result;
+}
+
+async function applyDeltaToDocument(key, delta) {
+    // need to refactor in futute to store deltas and not text in s3
     try {
-        const obj = await getS3Object(documentId)
-        const existingContent = JSON.parse(obj.Body.toString());
-    
-        const existingDelta = new Delta(existingContent);
-        const deltaToApply = new Delta(newDelta);
-    
-        const updated = existingDelta.compose(delta);
-    
-        await s3.putObject({
-        Bucket,
-        Key: documentId,
-        Body: JSON.stringify(updated),
-        ContentType: 'application/json',
-        }).promise();
+        const document = await getS3Object(key);
+        let content = await streamToString(document.Body);
+        content = applyDeltaToString(content, new Delta(delta));
+        await putS3Object(key, content);
+        return { status: 200 };
     } catch (error) {
         console.error(error);
+        return { status: 500 };
     }
 }
 /*
@@ -76,15 +109,8 @@ async function createDocument(req, res) {
         const fileId = v4();
         const key = `${userId}/${fileId}_${title}`;
 
-        // Create empty document in s3
-        const putObjectParams = {
-            Bucket: config.aws.bucket_name,
-            Key: key,
-            Body: '',
-            ContentType: 'text/plain'
-        };
-        const createNewDocCommand = new PutObjectCommand(putObjectParams);
-        s3Response = await client.send(createNewDocCommand);
+
+        s3Response = putS3Object(key, '');
 
         // Creates mongo mapping to s3 document
         const newDoc = new Document({
@@ -238,24 +264,38 @@ async function getDocuments(req, res) {
     Connections: AWS, Mongo, SQL
 */
 async function handleDocumentConnection(ws, req) {
-    const decoded = jwt.verify(req.query.token, config.jwt);
-    ws.user = decoded.user;
-    ws.on('message', (msg) => {
+    // Verify user has access to doucment on initial connection
+    try {
+        const decoded = jwt.verify(req.query.token, config.jwt);
+        ws.userId = decoded.id;
+        const documentId = req.query.documentId;
+        const permissionLevel = await getUserPermissionsToDocument(ws.userId, documentId);
+        if (permissionLevel != 'owner' && permissionLevel != 'write') {
+            ws.close(1008, 'Access denied: invalid token or no permission to document');
+        }
+        const metaData = await Document.findById(documentId);
+        ws.key = metaData.s3FileLink;
+        ws.messageCount = 1;
+    } catch (error) {
+        console.error(error);
+        ws.close(1011, 'Internal server error');
+    }
+
+    ws.on('message', async (msg) => {
         try {
-            const { type, documentId, delta } = JSON.parse(msg);
+            ws.messageCount += 1;
+            console.log(ws.messageCount);
+            const { type, delta } = JSON.parse(msg);
             if (type == "Update") {
-                const result = applyDeltaToDocument(documentId, delta);
+                const result = await applyDeltaToDocument(ws.key, delta);
                 if (result.status != 200) {
-                    ws.send('Error in syncing document, please check with servers to figure out why');
+                    ws.close(1011, 'Error in syncing document, please check with servers to figure out why');
                 }
             }
         } catch (error) {
             console.error(error);
-            ws.send('Uknown message received, please send a valid JSON with valid params');
-
+            ws.close(1011, 'Internal server error');
         }
-        console.log('Message received:', msg);
-        ws.send('Message was received by backend');
     });
 
     ws.on('close', (code, reason) => {

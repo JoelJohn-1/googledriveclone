@@ -37,7 +37,7 @@ export async function getDocument(documentId) {
 
 export async function establishConnection(documentId) {
     const token = localStorage.getItem('token');
-    const socket = new WebSocket(`ws://localhost:3001/documents/${documentId}?token=${token}`);
+    const socket = new WebSocket(`ws://localhost:3001/documents/ws/?documentId=${documentId}&token=${token}`);
 
     socket.onopen = (event) => {
         console.log("WebSocket connection closed");
@@ -54,6 +54,8 @@ export async function establishConnection(documentId) {
 
     socket.onclose = (event) => {
         console.log('WebSocket connection closed');
+        console.log(event);
+
     };
 
     return socket;
