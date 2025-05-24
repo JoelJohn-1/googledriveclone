@@ -34,6 +34,12 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.ENUM('read', 'write', 'owner'),
       allowNull: false,
       defaultValue: 'read'
+    },
+    createdAt: {
+      type: DataTypes.DATE
+    },
+    updatedAt: {
+      type: DataTypes.DATE
     }
   }, {
     sequelize,

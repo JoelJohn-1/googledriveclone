@@ -100,6 +100,18 @@ async function applyDeltaToDocument(key, delta) {
     }
 }
 
+// Updates Mongo updatedAt date
+async function handleCloseDocument(userId, documentId) {
+    const now = new Date();
+    try {
+        await Document.findOneAndUpdate(
+            { _id: documentId },
+            { $set: { updatedAt: now } }
+        );        
+    } catch (error) {
+        console.error(`Error updating timestamps for documentId: ${documentId}`, error);
+    }
+}
 /*
     createDocument: [/documents]: creates empty document connected to user
     Required Args: Req Body must contain title
@@ -280,7 +292,7 @@ async function handleDocumentConnection(ws, req) {
         }
         const metaData = await Document.findById(documentId);
         ws.key = metaData.s3FileLink;
-        ws.messageCount = 1;
+        ws.documentId = documentId;
     } catch (error) {
         console.error(error);
         ws.close(1011, 'Internal server error');
@@ -288,8 +300,6 @@ async function handleDocumentConnection(ws, req) {
 
     ws.on('message', async (msg) => {
         try {
-            ws.messageCount += 1;
-            console.log(ws.messageCount);
             const { type, delta } = JSON.parse(msg);
             if (type == "Update") {
                 const result = await applyDeltaToDocument(ws.key, delta);
@@ -304,7 +314,7 @@ async function handleDocumentConnection(ws, req) {
     });
 
     ws.on('close', (code, reason) => {
-        console.log(`WebSocket closed. Code: ${code}, Reason: ${reason}`);
+        handleCloseDocument(ws.userId, ws.documentId);
     });
 
     ws.on('error', (err) => {
