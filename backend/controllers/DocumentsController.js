@@ -9,6 +9,7 @@ const client = new S3Client({ region: config.aws.aws_region });
 const { v4 } = require('uuid');
 const jwt = require('jsonwebtoken');
 
+const connections = new Map();
 
 async function deleteS3Object(key) {
     const deleteCommand = new DeleteObjectCommand({
@@ -104,6 +105,7 @@ async function applyDeltaToDocument(key, delta) {
 async function handleCloseDocument(userId, documentId) {
     const now = new Date();
     try {
+        connections.delete(userId);
         await Document.findOneAndUpdate(
             { _id: documentId },
             { $set: { updatedAt: now } }
@@ -112,6 +114,7 @@ async function handleCloseDocument(userId, documentId) {
         console.error(`Error updating timestamps for documentId: ${documentId}`, error);
     }
 }
+
 /*
     createDocument: [/documents]: creates empty document connected to user
     Required Args: Req Body must contain title
@@ -293,6 +296,7 @@ async function handleDocumentConnection(ws, req) {
         const metaData = await Document.findById(documentId);
         ws.key = metaData.s3FileLink;
         ws.documentId = documentId;
+        connections.set(ws.userId, ws);
     } catch (error) {
         console.error(error);
         ws.close(1011, 'Internal server error');
