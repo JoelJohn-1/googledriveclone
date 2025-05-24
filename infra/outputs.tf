@@ -18,6 +18,7 @@ locals {
       database = local.user_db_name
       host     = local.user_db_address
       dialect  = "mysql"
+      logging: false
     },
     mongo = {
         mongo_db_ip = local.mongo_db_ip
